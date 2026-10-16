@@ -12,6 +12,9 @@ npm run check
 npm run db:migrate
 ```
 
+管理端前端已拆分到独立的 `ailian-admin` 仓库。本仓库只提供
+`/api/v1/admin/*` 管理 API，不再构建或托管管理端静态文件。
+
 ## Environment
 
 复制 `.env.example` 为 `.env` 后按需调整：
