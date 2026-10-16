@@ -20,7 +20,7 @@ const categoryNames = {
 
 export async function handleChatMessage(input: ChatMessageInput) {
   const intent = extractIntent(input.message);
-  const merchants = await searchMerchants(intent);
+  const merchants = await searchMerchants(intent, input.location);
 
   if (intent.serviceCategory === 'unknown') {
     return {
@@ -31,7 +31,7 @@ export async function handleChatMessage(input: ChatMessageInput) {
   }
 
   const categoryName = categoryNames[intent.serviceCategory];
-  const community = input.location?.communityName ?? '你附近';
+  const community = input.location?.communityName ?? (input.location ? '当前位置附近' : '服务范围内');
 
   return {
     intent,

@@ -21,9 +21,35 @@ export async function registerChatRoutes(app: FastifyInstance) {
       throw new AppError(400, 'MESSAGE_REQUIRED', '请先告诉我你遇到了什么生活问题。');
     }
 
+    const location = validateLocation(request.body.location);
+
     return handleChatMessage({
       message,
-      location: request.body.location,
+      location,
     });
   });
+}
+
+function validateLocation(location: ChatMessageBody['location']) {
+  if (location === undefined) return undefined;
+
+  if (
+    !isCoordinate(location.latitude, -90, 90)
+    || !isCoordinate(location.longitude, -180, 180)
+  ) {
+    throw new AppError(400, 'LOCATION_INVALID', '当前位置无效，请重新获取定位后再试。');
+  }
+
+  return {
+    latitude: location.latitude,
+    longitude: location.longitude,
+    communityName: location.communityName?.trim().slice(0, 100) || undefined,
+  };
+}
+
+function isCoordinate(value: unknown, minimum: number, maximum: number): value is number {
+  return typeof value === 'number'
+    && Number.isFinite(value)
+    && value >= minimum
+    && value <= maximum;
 }

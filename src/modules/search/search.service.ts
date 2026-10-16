@@ -17,6 +17,11 @@ export type SearchMerchantsInput = {
   limit?: number;
 };
 
+type SearchLocation = {
+  latitude: number;
+  longitude: number;
+};
+
 type SearchRow = {
   id: string;
   service_id: string | null;
@@ -37,7 +42,10 @@ type SearchRow = {
   match_score: number;
 };
 
-export async function searchMerchants(intent: ServiceIntent): Promise<RankedMerchant[]> {
+export async function searchMerchants(
+  intent: ServiceIntent,
+  location?: SearchLocation,
+): Promise<RankedMerchant[]> {
   if (intent.serviceCategory === 'unknown') {
     return [];
   }
@@ -45,6 +53,8 @@ export async function searchMerchants(intent: ServiceIntent): Promise<RankedMerc
   return searchMerchantDatabase({
     serviceCategory: intent.serviceCategory,
     keyword: intent.keywords[0],
+    latitude: location?.latitude,
+    longitude: location?.longitude,
     limit: 5,
   });
 }
@@ -73,24 +83,19 @@ function buildSearchQuery(input: SearchMerchantsInput) {
       ELSE ST_DistanceSphere(m.geo_point, ${pointExpression}) / 1000
     END`;
 
-    where.push(`(
-      m.geo_point IS NULL
-      OR ST_DWithin(
-        m.geo_point::geography,
-        ${pointExpression}::geography,
-        (m.service_radius_km * 1000)::double precision
-      )
+    where.push(`m.geo_point IS NOT NULL`);
+    where.push(`ST_DWithin(
+      m.geo_point::geography,
+      ${pointExpression}::geography,
+      (m.service_radius_km * 1000)::double precision
     )`);
 
     if (input.radiusKm && input.radiusKm > 0) {
       const radiusIndex = pushValue(values, input.radiusKm);
-      where.push(`(
-        m.geo_point IS NULL
-        OR ST_DWithin(
-          m.geo_point::geography,
-          ${pointExpression}::geography,
-          ($${radiusIndex} * 1000)::double precision
-        )
+      where.push(`ST_DWithin(
+        m.geo_point::geography,
+        ${pointExpression}::geography,
+        ($${radiusIndex} * 1000)::double precision
       )`);
     }
   }
