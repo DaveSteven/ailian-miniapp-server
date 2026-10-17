@@ -36,9 +36,21 @@ OSS_REGION=oss-cn-guangzhou
 OSS_ROLE_NAME=AilianMerchantMediaEcsRole
 OSS_UPLOAD_PREFIX=merchant-media
 OSS_SIGNED_URL_SECONDS=600
+AI_ENABLED=false
+AI_API_KEY=你的千问API Key
+AI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+AI_MODEL=qwen3.7-flash-2026-07-15
+AI_TIMEOUT_MS=3000
+AI_CONFIDENCE_THRESHOLD=0.75
+AI_INPUT_PRICE_PER_MILLION=0.2
+AI_OUTPUT_PRICE_PER_MILLION=0.8
 ```
 
-当前暂未自动加载 `.env` 文件，开发时可直接用 shell 环境变量覆盖。
+服务启动时会自动加载未提交到 Git 的 `.env` 文件，也可直接用 shell 环境变量覆盖。
+
+AI 默认关闭。启用后，聊天服务会优先使用本地高置信规则，其余请求调用千问，并在失败时安全降级。
+每次识别都会写入结构化 `intentTelemetry` 日志，包括来源、分类、置信度、模型、延迟、Token
+和按环境变量单价计算的预估费用；日志不会包含用户原文、位置、手机号或 API Key。
 
 ## 地推人员权限
 

@@ -1,17 +1,6 @@
-export type ServiceCategory =
-  | 'pipe_unclogging'
-  | 'locksmith'
-  | 'appliance_repair'
-  | 'housekeeping'
-  | 'unknown';
+import type { ServiceCategory, ServiceIntent } from './intent.types.js';
 
-export type ServiceIntent = {
-  intent: 'find_service' | 'small_talk';
-  serviceCategory: ServiceCategory;
-  urgency: 'low' | 'normal' | 'high';
-  keywords: string[];
-  locationRequired: boolean;
-};
+export type { ServiceCategory, ServiceIntent } from './intent.types.js';
 
 const categoryRules: Array<{
   category: ServiceCategory;

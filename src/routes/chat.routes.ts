@@ -12,6 +12,8 @@ type ChatMessageBody = {
   };
 };
 
+const MAX_CHAT_MESSAGE_LENGTH = 2000;
+
 export async function registerChatRoutes(app: FastifyInstance) {
   app.post<{ Body: ChatMessageBody }>('/message', async (request) => {
     await requireUser(request);
@@ -20,12 +22,23 @@ export async function registerChatRoutes(app: FastifyInstance) {
     if (!message) {
       throw new AppError(400, 'MESSAGE_REQUIRED', '请先告诉我你遇到了什么生活问题。');
     }
+    if (message.length > MAX_CHAT_MESSAGE_LENGTH) {
+      throw new AppError(400, 'MESSAGE_TOO_LONG', `需求描述不能超过 ${MAX_CHAT_MESSAGE_LENGTH} 个字。`);
+    }
 
     const location = validateLocation(request.body.location);
 
     return handleChatMessage({
       message,
       location,
+      onIntentTelemetry: (event) => {
+        const logData = { intentTelemetry: event };
+        if (event.errorCode && event.errorCode !== 'AI_DISABLED') {
+          request.log.warn(logData, 'AI intent extraction fell back');
+        } else {
+          request.log.info(logData, 'Intent extraction completed');
+        }
+      },
     });
   });
 }

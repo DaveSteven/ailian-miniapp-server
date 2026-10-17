@@ -1,4 +1,4 @@
-import { extractIntent } from '../ai/intent.service.js';
+import { resolveIntent, type IntentTelemetryEvent } from '../ai/hybrid-intent.service.js';
 import { searchMerchants } from '../search/search.service.js';
 
 type ChatMessageInput = {
@@ -8,29 +8,33 @@ type ChatMessageInput = {
     longitude: number;
     communityName?: string;
   };
-};
-
-const categoryNames = {
-  pipe_unclogging: '管道疏通',
-  locksmith: '开锁换锁',
-  appliance_repair: '家电维修',
-  housekeeping: '家政保洁',
-  unknown: '生活服务',
+  onIntentTelemetry?: (event: IntentTelemetryEvent) => void;
 };
 
 export async function handleChatMessage(input: ChatMessageInput) {
-  const intent = extractIntent(input.message);
-  const merchants = await searchMerchants(intent, input.location);
+  const intent = await resolveIntent(input.message, {
+    onTelemetry: input.onIntentTelemetry,
+  });
 
-  if (intent.serviceCategory === 'unknown') {
+  if (intent.intent === 'small_talk') {
     return {
       intent,
-      reply: '我还没完全听明白你要找哪类服务。你可以说得更具体一点，比如“厨房下水堵了”“钥匙丢了要开锁”或“空调不制冷”。',
+      reply: '我是爱联的社区生活服务助手。你可以直接告诉我遇到的问题，比如“厨房下水堵了”或“空调不制冷”，我会帮你找附近合适的服务人员。',
       merchants: [],
     };
   }
 
-  const categoryName = categoryNames[intent.serviceCategory];
+  if (intent.intent === 'unclear' || !intent.serviceCategory) {
+    return {
+      intent,
+      reply: intent.clarificationQuestion
+        || '我还没完全听明白你要找哪类服务，可以再具体说一下需要处理的物品或问题吗？',
+      merchants: [],
+    };
+  }
+
+  const merchants = await searchMerchants(intent, input.location);
+  const categoryName = intent.serviceCategoryName || '生活服务';
   const community = input.location?.communityName ?? (input.location ? '当前位置附近' : '服务范围内');
 
   return {

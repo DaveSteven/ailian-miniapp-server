@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { pool } from '../../db/client.js';
 import { AppError } from '../../plugins/error-handler.js';
+import { invalidateIntentCategoryCache } from '../ai/category-context.service.js';
 
 type CategoryRow = {
   id: string;
@@ -45,6 +46,7 @@ export async function createAdminCategory(input: { name?: unknown; description?:
     [code, name, description || null],
   );
   const row = result.rows[0];
+  invalidateIntentCategoryCache();
   return {
     id: row.id, code: row.code, name: row.name, description: row.description,
     createdAt: row.created_at, merchantCount: 0,
@@ -69,6 +71,7 @@ export async function updateAdminCategory(id: string, input: { name?: unknown; d
   );
   const row = result.rows[0];
   if (!row) throw new AppError(404, 'CATEGORY_NOT_FOUND', '没有找到这个分类。');
+  invalidateIntentCategoryCache();
   return {
     id: row.id, code: row.code, name: row.name, description: row.description,
     createdAt: row.created_at, merchantCount: Number(row.merchant_count),

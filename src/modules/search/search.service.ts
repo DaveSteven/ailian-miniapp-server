@@ -1,5 +1,5 @@
-import type { ServiceCategory, ServiceIntent } from '../ai/intent.service.js';
 import { pool } from '../../db/client.js';
+import type { ResolvedIntent } from '../ai/intent.types.js';
 import type { Merchant } from '../merchants/merchant.types.js';
 
 export type RankedMerchant = Merchant & {
@@ -9,7 +9,7 @@ export type RankedMerchant = Merchant & {
 };
 
 export type SearchMerchantsInput = {
-  serviceCategory?: ServiceCategory | string;
+  serviceCategory?: string;
   keyword?: string;
   latitude?: number;
   longitude?: number;
@@ -27,7 +27,7 @@ type SearchRow = {
   service_id: string | null;
   service_name: string | null;
   name: string;
-  category: ServiceCategory | null;
+  category: string | null;
   tags: string[] | null;
   rating: string | null;
   distance_km: string | null;
@@ -43,10 +43,10 @@ type SearchRow = {
 };
 
 export async function searchMerchants(
-  intent: ServiceIntent,
+  intent: Pick<ResolvedIntent, 'intent' | 'serviceCategory' | 'keywords'>,
   location?: SearchLocation,
 ): Promise<RankedMerchant[]> {
-  if (intent.serviceCategory === 'unknown') {
+  if (intent.intent !== 'find_service' || !intent.serviceCategory) {
     return [];
   }
 

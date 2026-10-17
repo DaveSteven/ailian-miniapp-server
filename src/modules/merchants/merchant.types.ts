@@ -1,9 +1,7 @@
-import type { ServiceCategory } from '../ai/intent.service.js';
-
 export type Merchant = {
   id: string;
   name: string;
-  category: ServiceCategory;
+  category: string;
   tags: string[];
   rating: number;
   reviewCount: number;

@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 type LogLevel = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';
 
 type Env = {
@@ -20,6 +22,14 @@ type Env = {
   ADMIN_USERNAME: string;
   ADMIN_PASSWORD: string;
   ADMIN_TOKEN_SECRET: string;
+  AI_ENABLED: boolean;
+  AI_API_KEY: string;
+  AI_BASE_URL: string;
+  AI_MODEL: string;
+  AI_TIMEOUT_MS: number;
+  AI_CONFIDENCE_THRESHOLD: number;
+  AI_INPUT_PRICE_PER_MILLION: number;
+  AI_OUTPUT_PRICE_PER_MILLION: number;
 };
 
 const DEFAULT_PORT = 3000;
@@ -45,6 +55,22 @@ export const env: Env = {
   ADMIN_USERNAME: process.env.ADMIN_USERNAME || 'admin',
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || '000000',
   ADMIN_TOKEN_SECRET: process.env.ADMIN_TOKEN_SECRET || 'ailian-admin-change-this-secret',
+  AI_ENABLED: parseBoolean(process.env.AI_ENABLED, false),
+  AI_API_KEY: process.env.AI_API_KEY || '',
+  AI_BASE_URL: trimTrailingSlash(
+    process.env.AI_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+  ),
+  AI_MODEL: process.env.AI_MODEL || 'qwen3.7-flash-2026-07-15',
+  AI_TIMEOUT_MS: parsePositiveInteger(process.env.AI_TIMEOUT_MS, 3000),
+  AI_CONFIDENCE_THRESHOLD: parseUnitInterval(process.env.AI_CONFIDENCE_THRESHOLD, 0.75),
+  AI_INPUT_PRICE_PER_MILLION: parseNonNegativeNumber(
+    process.env.AI_INPUT_PRICE_PER_MILLION,
+    0.2,
+  ),
+  AI_OUTPUT_PRICE_PER_MILLION: parseNonNegativeNumber(
+    process.env.AI_OUTPUT_PRICE_PER_MILLION,
+    0.8,
+  ),
 };
 
 function parseNodeEnv(value: string | undefined): Env['NODE_ENV'] {
@@ -98,5 +124,34 @@ function parsePositiveInteger(value: string | undefined, defaultValue: number): 
     throw new Error(`Invalid positive integer: ${value}`);
   }
 
+  return parsed;
+}
+
+function parseBoolean(value: string | undefined, defaultValue: boolean) {
+  if (!value) return defaultValue;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error(`Invalid boolean: ${value}`);
+}
+
+function parseUnitInterval(value: string | undefined, defaultValue: number) {
+  if (!value) return defaultValue;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
+    throw new Error(`Invalid number between 0 and 1: ${value}`);
+  }
+  return parsed;
+}
+
+function trimTrailingSlash(value: string) {
+  return value.replace(/\/+$/, '');
+}
+
+function parseNonNegativeNumber(value: string | undefined, defaultValue: number) {
+  if (!value) return defaultValue;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    throw new Error(`Invalid non-negative number: ${value}`);
+  }
   return parsed;
 }
